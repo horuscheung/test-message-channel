@@ -1,0 +1,213 @@
+<html>
+
+    <style>
+        body {
+          margin: auto;
+          padding: 5vw;
+          font-family: Helvetica;
+          font-size: max(min(6vw, 6vh), 20px);
+        }
+      
+        @media (min-width: 1000px) {
+          body {
+            font-size: 20px;
+          }
+        }
+      
+        @media (max-width: 1000px) {
+          body {
+            font-size: max(min(6vw, 6vh), 20px);
+          }
+        }
+        .actions{
+         display:flex;
+        }
+        #buttons{
+            display:flex;
+        }
+        .line {
+          margin-right: 1.5em;
+        }
+      
+        .label {
+          font-weight: bold;
+          margin-bottom: 0.2em;
+          opacity: 0.7;
+        }
+        #buttons>div>#emoji {
+          padding: 10px;
+          display: table;
+          border-radius: 30px;
+          background-color: #FFFBFE;
+          cursor: pointer;
+          transition: all 0.3s;
+        }
+        #buttons>div>#emoji:hover {
+          background-color: #7A7D7D;
+        }
+        #start,
+        #buttons>div>#send {
+          padding: 0.3em 0.5em;
+          border-radius: 5px;
+          display: table;
+          border: 1px solid #D0CFCF;
+          background-color: #FFFBFE;
+          cursor: pointer;
+          transition: all 0.3s;
+          margin-top:3px;
+        }
+        #start:hover,
+        #buttons>div>#send:hover {
+          background-color: #7A7D7D;
+        }
+        #buttons.disabled>div>#send{
+        background-color: #565254;
+          color: #888;
+        }
+        #receive.none {
+          opacity: 0.5;
+        }
+      #free{
+        height:100px;
+      }
+      </style>
+<script>
+    const ports = [];
+  
+    function start() {
+      const channel = new MessageChannel();
+      channel.port1.onmessage = (e) => {
+        const receive = document.getElementById("receive");
+        console.log(e.data);
+        receive.innerText = JSON.stringify(e.data);
+  
+        receive.classList.remove("none");
+      };
+  
+      const start = JSON.stringify({ type: "wms.start.request", id: "123", format:"object" });
+ 
+      const frame = document.querySelector("iframe");
+      frame.contentWindow.postMessage(start, "*", [channel.port2]);
+  
+      ports.push(channel.port1);
+      ports.push(channel.port2);
+      const buttons = document.getElementById("buttons");
+      buttons.classList.remove("disabled");
+    }
+  
+    function sendDarkMode() {
+      sendMessage({
+        type: "wms.setColorMode",
+        colorMode:"dark"
+      });
+    }
+    function sendLightMode() {
+      sendMessage({
+        type: "wms.setColorMode",
+        colorMode:"light"
+      });
+    }
+    function sendLanguageEnglish() {
+      sendMessage({
+        type: "wms.setDefaultLanguage",
+        language: "en"
+      });
+    }
+    function sendLanguageTraditionalChinese() {
+      sendMessage({
+        type: "wms.setDefaultLanguage",
+        language: "zh-HK"
+      });
+    }
+    function sendLanguageSimplifiedChinese() {
+      sendMessage({
+        type: "wms.setDefaultLanguage",
+        language: "zh-CN"
+      });
+    }
+    function sendDefaultCurrency(){
+        const currency = document.getElementById("currency");
+        sendMessage({
+            type: "wms.setDefaultCurrency",
+            currencyCode: currency.value
+        });
+    }
+    function sendFreeMessage(){
+        const message = document.getElementById("free");
+        sendMessage(JSON.parse(message.value));
+    }
+    function sendStartRequest(){
+        sendMessage({ type: "wms.start.request", id: "123", format:"object" });
+    }
+    function sendMessage(object) {
+      const message = JSON.stringify(object);
+  
+      for (const port of ports) {
+        port.postMessage(message);
+      }
+    }
+    function setMobile(){
+        const frame = document.querySelector("iframe");
+        frame.style.width=344;
+
+        frame.style.height=844;
+    }
+    function setDesktop(){
+        const frame = document.querySelector("iframe");
+        frame.style.width=1201;
+
+        frame.style.height=600;
+    }
+  </script>
+<div class="actions">
+<div class="line">
+  <div class="label">Start</div>
+  <div id="start" onclick="start()">Start</div>
+</div>
+<div id="buttons" class="disabled">
+<div class="line">
+  <div class="label">Color Mode</div>
+  <div id="send"  onclick="sendDarkMode()">Dark Mode</div>
+  <div id="send"  onclick="sendLightMode()">Light Mode</div>
+</div>
+<div class="line">
+    <div class="label">Language</div>
+    <div id="send"  onclick="sendLanguageEnglish()">English</div>
+    <div id="send"  onclick="sendLanguageTraditionalChinese()">Traditional Chinese</div>
+    <div id="send"  onclick="sendLanguageSimplifiedChinese()">Simplified Chinese</div>
+</div>
+<div class="line">
+    <div class="label">Currency</div>
+    <input type="text" id="currency">
+    <div id="send" onclick="sendDefaultCurrency()">Send</div>
+  </div>
+  <div class="line">
+    <div class="label">Free Message</div>
+    <textarea id="free"
+          rows="6"
+          cols="40"
+          required>{
+"type": "wms.start.request", 
+"id": "123", 
+"format":"object" 
+}
+</textarea>
+    <div id="send" onclick="sendFreeMessage()">Send</div>
+  </div>
+  <div class="line">
+    <div class="label">View</div>
+    <div id="emoji" onclick="setMobile()">📱</div>
+    <div id="emoji" onclick="setDesktop()">🖥</div>
+  </div>
+</div>
+</div>
+</div>
+
+<div class="line">
+    <div class="label">Response Message</div>
+    <div id="receive" class="none">wait for message from child</div>
+  </div>
+<div class="child">
+<iframe src="http://localhost:8958" title="WMS" width="390" height="844" />
+</div>
+</html>
